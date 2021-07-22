@@ -1,4 +1,4 @@
-FROM oamdev/docker-terraform-base:1.0.3
+FROM oamdev/docker-terraform-base:1.0.4
 
 VOLUME ["/data"]
 
