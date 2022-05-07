@@ -48,8 +48,3 @@ Terraform version is 0.14.10, and alibaba/null/template providers are built-in.
 - tag: 0.14.9
 
 Terraform version is 0.14.9, and it's a long-running container.
-
-# Licensing
-
-I asked [What's the license of this project?](https://github.com/broadinstitute/docker-terraform/issues/19) in the original
-project, but I haven't received a response.
