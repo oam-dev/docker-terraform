@@ -8,7 +8,7 @@ PROVIDER_VERSION=$2
 
 echo "Downloading: $PROVIDER_NAME, $PROVIDER_VERSION"
 
-TERRAFORM_DIR=.terraform.d/plugins/registry.terraform.io/hashicorp
+TERRAFORM_DIR=/root/.terraform.d/plugins/registry.terraform.io/hashicorp
 HASHICORP_RELEASE_DOMAIN=https://releases.hashicorp.com
 
 PROVIDER_RUL=$HASHICORP_RELEASE_DOMAIN/terraform-provider-"$PROVIDER_NAME"/"$PROVIDER_VERSION"/terraform-provider-"$PROVIDER_NAME"_"$PROVIDER_VERSION"_linux_amd64.zip

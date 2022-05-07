@@ -26,6 +26,4 @@ ENV RETRIEVE_TF_PROVIDER=/tmp/retrieve_tf_provider.sh
 RUN $RETRIEVE_TF_PROVIDER random 3.1.0
 RUN $RETRIEVE_TF_PROVIDER alicloud 1.140.0
 
-RUN cp -r .terraform.d /root/.terraform.d
-
 ENTRYPOINT ["tail", "-f", "/dev/null"]
