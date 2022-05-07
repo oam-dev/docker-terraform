@@ -1,14 +1,16 @@
 set -x
 # accept two arguments from command line
-# 1. the name of the Terraform provider
-# 2. the version of the Terraform provider
+# 1. the group of the Terraform provider
+# 2. the name of the Terraform provider
+# 3. the version of the Terraform provider
 
-PROVIDER_NAME=$1
-PROVIDER_VERSION=$2
+PROVIDER_GROUP=$1
+PROVIDER_NAME=$2
+PROVIDER_VERSION=$3
 
 echo "Downloading: $PROVIDER_NAME, $PROVIDER_VERSION"
 
-TERRAFORM_DIR=/root/.terraform.d/plugins/registry.terraform.io/hashicorp
+TERRAFORM_DIR=/root/.terraform.d/plugins/registry.terraform.io/$PROVIDER_GROUP
 HASHICORP_RELEASE_DOMAIN=https://releases.hashicorp.com
 
 PROVIDER_RUL=$HASHICORP_RELEASE_DOMAIN/terraform-provider-"$PROVIDER_NAME"/"$PROVIDER_VERSION"/terraform-provider-"$PROVIDER_NAME"_"$PROVIDER_VERSION"_linux_amd64.zip

@@ -15,6 +15,12 @@ $ docker build -t oamdev/docker-terraform:$TAG .
 $ docker push oamdev/docker-terraform:$TAG
 ```
 
+# Additional integration of provider into the image
+Specify -build-arg PROVIDERS=$GROUP/$NAME/$VERSION
+```shell
+$ docker build --build-arg PROVIDERS=tencentcloudstack/tencentcloud/1.72.0,hashicorp/aws/4.13.0 -t oamdev/docker-terraform:$TAG .
+```
+
 # oam-dev/docker-terraform
 
 - tag: 1.0.7
