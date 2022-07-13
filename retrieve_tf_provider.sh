@@ -15,7 +15,7 @@ HASHICORP_RELEASE_DOMAIN=https://releases.hashicorp.com
 
 PROVIDER_RUL=$HASHICORP_RELEASE_DOMAIN/terraform-provider-"$PROVIDER_NAME"/"$PROVIDER_VERSION"/terraform-provider-"$PROVIDER_NAME"_"$PROVIDER_VERSION"_linux_amd64.zip
 wget "$PROVIDER_RUL" -O provider.zip &&
-  unzip provider.zip &&
+  unzip -o provider.zip &&
   chmod +x terraform-provider-"$PROVIDER_NAME"_* &&
   mkdir -p $TERRAFORM_DIR/"$PROVIDER_NAME"/"$PROVIDER_VERSION"/linux_amd64 &&
   mv terraform-provider-"$PROVIDER_NAME"_* $TERRAFORM_DIR/"$PROVIDER_NAME"/"$PROVIDER_VERSION"/linux_amd64 &&
