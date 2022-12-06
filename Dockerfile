@@ -27,7 +27,7 @@ ENV RETRIEVE_TF_PROVIDER=/tmp/retrieve_tf_provider.sh
 
 # default provider
 RUN $RETRIEVE_TF_PROVIDER hashicorp random 3.1.0
-RUN $RETRIEVE_TF_PROVIDER hashicorp alicloud 1.140.0
+RUN $RETRIEVE_TF_PROVIDER hashicorp alicloud 1.187.0
 
 # additional designated provider
 RUN if [ "${PROVIDERS}" = "" ] ;then \
