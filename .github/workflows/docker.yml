@@ -18,6 +18,13 @@ jobs:
   docker-build:
     runs-on: ubuntu-24.04
     steps:
+      - name: Allow manual runs only on master and release branches
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ ${GITHUB_REF} != "refs/heads/master" && ${GITHUB_REF} != refs/heads/release-* ]]; then
+            echo "::error::Manual runs are only allowed on master or a release-* branch, not ${GITHUB_REF}"
+            exit 1
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Get the version
         id: get_version
@@ -26,6 +33,9 @@ jobs:
           VERSION=${tag#"v"}
           if [[ ${GITHUB_REF} == "refs/heads/master" ]]; then
             VERSION=latest
+          fi
+          if [[ ${GITHUB_EVENT_NAME} == "workflow_dispatch" && ${GITHUB_REF} == refs/heads/release-* ]]; then
+            VERSION=${GITHUB_REF_NAME}-$(git rev-parse --short HEAD)
           fi
           if [[ ${GITHUB_EVENT_NAME} == "pull_request" ]]; then
             VERSION=pr-${{ github.event.pull_request.number }}
