@@ -3,33 +3,40 @@ name: Trivy Scan
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, 'release-*' ]
   pull_request:
     # The branches below must be a subset of the branches above
-    branches: [ master ]
+    branches: [ master, 'release-*' ]
   schedule:
     - cron: '45 17 * * 2'
+
+permissions:
+  contents: read
 
 jobs:
  images:
   name: Image Scan
   runs-on: ubuntu-latest
+  permissions:
+    contents: read
+    security-events: write
   steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - name: Build image from Dockerfile
       run: |
         docker build -t oamdev/docker-terraform:${{ github.sha }} .
     - name: Run Trivy vulnerability scanner for docker terraform
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
       with:
         image-ref: 'oamdev/docker-terraform:${{ github.sha }}'
         format: 'sarif'
         output: 'trivy-results.sarif'
 
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v1
-      if: always()
+      uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      # Pull requests from forks get a read-only token and can't upload
+      if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
       with:
         sarif_file: 'trivy-results.sarif'
