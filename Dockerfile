@@ -1,12 +1,12 @@
-FROM alpine:3.13
+FROM alpine:3.24@sha256:3f4d6b32e26703c6082839234f43769d5046b3ac7c910033911d1e71d8cd630a
 
 RUN \
   apk update && \
-  apk add bash py-pip && \
+  apk add bash py3-pip && \
   apk add --virtual=build gcc libffi-dev musl-dev openssl-dev python3-dev make && \
   apk add curl jq python3 ca-certificates git openssl unzip wget mysql-client libc6-compat && \
-  pip --no-cache-dir install -U pip && \
-  pip install azure-cli && \
+  pip --no-cache-dir install --break-system-packages -U pip && \
+  pip install --no-cache-dir --break-system-packages azure-cli && \
   apk del --purge build
 
 ARG PROVIDERS
