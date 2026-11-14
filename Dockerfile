@@ -41,9 +41,8 @@ COPY ossutil /usr/bin
 
 ENV RETRIEVE_TF_PROVIDER=/tmp/retrieve_tf_provider.sh
 
-# default provider
-RUN $RETRIEVE_TF_PROVIDER hashicorp random 3.1.0
-RUN $RETRIEVE_TF_PROVIDER hashicorp alicloud 1.187.0
+# default provider (alicloud is no longer bundled: a Configuration downloads the version it asks for)
+RUN $RETRIEVE_TF_PROVIDER hashicorp random 3.9.1
 
 # additional designated provider
 RUN if [ "${PROVIDERS}" = "" ] ;then \
