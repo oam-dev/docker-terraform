@@ -15,10 +15,26 @@ VOLUME ["/data"]
 
 WORKDIR /data
 
-ENV TERRAFORM_VERSION=1.5.5
-COPY terraform_${TERRAFORM_VERSION}_linux_amd64.zip /tmp
-RUN cd /tmp && \
-    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/bin
+# OpenTofu, installed as `tofu` with `terraform` linked to it, so the commands terraform-controller
+# runs (terraform init / apply / destroy) work unchanged. The checksums are from the release's
+# tofu_<version>_SHA256SUMS, whose GPG signature (key E3E6E43D84CB852EADB0051D0C0AF313E5FD9F80)
+# was verified when they were pinned.
+ARG TARGETARCH
+ARG TOFU_VERSION=1.13.9
+ARG TOFU_SHA256_AMD64=b34b327cc1ef07178207b6f2cd1f5276537d3e5b7be316500f6dac50d4c0a857
+ARG TOFU_SHA256_ARM64=5dc196dde75b667e4806d358310ec96742774cd0993c54c1237efee5644b69b8
+RUN set -eu; \
+    case "${TARGETARCH}" in \
+      amd64) sha="${TOFU_SHA256_AMD64}" ;; \
+      arm64) sha="${TOFU_SHA256_ARM64}" ;; \
+      *) echo "unsupported architecture: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac; \
+    wget -q -O /tmp/tofu.tar.gz "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}/tofu_${TOFU_VERSION}_linux_${TARGETARCH}.tar.gz"; \
+    echo "${sha}  /tmp/tofu.tar.gz" | sha256sum -c -; \
+    tar -xzf /tmp/tofu.tar.gz -C /usr/bin tofu; \
+    rm /tmp/tofu.tar.gz; \
+    ln -s tofu /usr/bin/terraform; \
+    terraform version
 COPY retrieve_tf_provider.sh /tmp
 
 COPY ossutil /usr/bin
