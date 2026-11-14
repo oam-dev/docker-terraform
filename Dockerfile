@@ -37,8 +37,6 @@ RUN set -eu; \
     terraform version
 COPY retrieve_tf_provider.sh /tmp
 
-COPY ossutil /usr/bin
-
 ENV RETRIEVE_TF_PROVIDER=/tmp/retrieve_tf_provider.sh
 
 # default provider (alicloud is no longer bundled: a Configuration downloads the version it asks for)
