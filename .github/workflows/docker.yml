@@ -58,6 +58,24 @@ jobs:
       - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
+      # Each platform's image must run its own binaries: an arm64 image with x86-64 ones was published
+      # before (docker-terraform N5). Build each platform, then run the tools in it.
+      - name: Smoke test each platform
+        run: |
+          for arch in amd64 arm64; do
+            docker buildx build --platform "linux/${arch}" --load -t "smoke:${arch}" .
+            docker run --rm --platform "linux/${arch}" -e ARCH="${arch}" --entrypoint sh "smoke:${arch}" -euc '
+              v="$(terraform version)"; echo "$v"
+              echo "$v" | grep -q "^OpenTofu v"
+              echo "$v" | grep -qx "on linux_${ARCH}"
+              ls /root/.terraform.d/plugins/registry.opentofu.org/hashicorp/random/*/"linux_${ARCH}"/terraform-provider-random_*
+              git --version
+              ssh -V
+              jq --version
+              az version --output none
+            '
+          done
+
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         name: Build & Pushing image for Dockerhub
         with:
@@ -66,7 +84,7 @@ jobs:
           labels: |-
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
           build-args: |
             GITVERSION=git-${{ steps.vars.outputs.git_revision }}
