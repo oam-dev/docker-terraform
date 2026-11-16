@@ -6,11 +6,12 @@ name: Backport
 # - when someone with write access comments `/backport release-x.y` (or `/backport x.y`;
 #   several branches separated by spaces) on it.
 #
-# Pull requests opened with GITHUB_TOKEN get no CI. Set the repository variable
+# Pull requests opened with GITHUB_TOKEN don't start CI on their own. Set the repository variable
 # BACKPORT_APP_CLIENT_ID and the secret BACKPORT_APP_PRIVATE_KEY (a GitHub App installed on
 # this repository with contents and pull-requests write) to open them with the app's token.
-# Without them the workflow still works, but CI on a backport pull request has to be started
-# by hand (close and reopen it).
+# Without them the workflow uses GITHUB_TOKEN: then the repository setting "Allow GitHub Actions
+# to create and approve pull requests" has to be on, and the checks on a backport pull request
+# wait for a maintainer to approve them.
 #
 # pull_request_target and issue_comment run this file from master. Nothing from the pull
 # request is executed: the checkout is master, and the commits are only cherry-picked.
@@ -111,6 +112,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Open the backport pull requests
+        id: backport
         uses: korthout/backport-action@8560fb503c275d433c56f05a2f64850093baa9f7 # v4.7.0
         with:
           github_token: ${{ steps.app-token.outputs.token || github.token }}
@@ -118,3 +120,13 @@ jobs:
           # The branches come from the step above, for every trigger, so a label added
           # after the merge doesn't backport the earlier labels again.
           label_pattern: ""
+
+      # The action reports a failed backport (a conflict, or a rejected pull request) in a
+      # comment but leaves the step green; fail the run too, so it shows up in Actions.
+      - name: Fail if a backport failed
+        if: steps.backport.outputs.was_successful != 'true'
+        env:
+          BY_TARGET: ${{ steps.backport.outputs.was_successful_by_target }}
+        run: |
+          echo "::error::backport failed: ${BY_TARGET}"
+          exit 1
