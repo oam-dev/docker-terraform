@@ -1,0 +1,120 @@
+name: Backport
+
+# Opens backport pull requests for a merged pull request:
+# - when it is merged with `backport release-x.y` labels, one pull request per label;
+# - when a `backport release-x.y` label is added after the merge, for that label;
+# - when someone with write access comments `/backport release-x.y` (or `/backport x.y`;
+#   several branches separated by spaces) on it.
+#
+# Pull requests opened with GITHUB_TOKEN get no CI. Set the repository variable
+# BACKPORT_APP_CLIENT_ID and the secret BACKPORT_APP_PRIVATE_KEY (a GitHub App installed on
+# this repository with contents and pull-requests write) to open them with the app's token.
+# Without them the workflow still works, but CI on a backport pull request has to be started
+# by hand (close and reopen it).
+#
+# pull_request_target and issue_comment run this file from master. Nothing from the pull
+# request is executed: the checkout is master, and the commits are only cherry-picked.
+
+on:
+  pull_request_target:
+    types: [closed, labeled]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+
+jobs:
+  backport:
+    runs-on: ubuntu-24.04
+    if: >
+      (
+        github.event_name == 'pull_request_target' &&
+        github.event.pull_request.merged &&
+        (
+          (github.event.action == 'closed' && contains(toJSON(github.event.pull_request.labels.*.name), '"backport ')) ||
+          (github.event.action == 'labeled' && startsWith(github.event.label.name, 'backport '))
+        )
+      ) || (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request &&
+        startsWith(github.event.comment.body, '/backport')
+      )
+    permissions:
+      contents: write # push the backport branches
+      pull-requests: write # open the pull requests and comment on the original
+    steps:
+      - name: Find the target branches
+        id: targets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          ACTION: ${{ github.event.action }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          LABEL: ${{ github.event.label.name }}
+          COMMENT: ${{ github.event.comment.body }}
+          ACTOR: ${{ github.actor }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          set -euo pipefail
+          set -f # the branch names below are split on spaces, never globbed
+          case "${GITHUB_EVENT_NAME}/${ACTION}" in
+            pull_request_target/closed)
+              requested=$(jq -r '.[] | select(startswith("backport ")) | sub("^backport "; "")' <<<"${LABELS}")
+              ;;
+            pull_request_target/labeled)
+              requested=${LABEL#backport }
+              ;;
+            issue_comment/*)
+              permission=$(gh api "repos/${REPO}/collaborators/${ACTOR}/permission" --jq .permission)
+              if [[ ${permission} != admin && ${permission} != write ]]; then
+                echo "::error::/backport needs write access; ${ACTOR} has ${permission}"
+                exit 1
+              fi
+              if [[ $(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq .merged) != true ]]; then
+                echo "::error::#${PR_NUMBER} is not merged"
+                exit 1
+              fi
+              requested=$(head -n1 <<<"${COMMENT}" | tr -d '\r' | sed 's|^/backport||')
+              ;;
+          esac
+          targets=""
+          for b in ${requested}; do
+            [[ ${b} =~ ^[0-9]+\.[0-9]+$ ]] && b="release-${b}"
+            if [[ ! ${b} =~ ^release-[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::not a release branch: ${b}"
+              exit 1
+            fi
+            if ! gh api "repos/${REPO}/branches/${b}" --silent; then
+              echo "::error::branch ${b} does not exist"
+              exit 1
+            fi
+            targets="${targets} ${b}"
+          done
+          if [[ -z ${targets} ]]; then
+            echo "::error::no target branch given"
+            exit 1
+          fi
+          echo "branches=${targets# }" >> "${GITHUB_OUTPUT}"
+          echo "Backport to: ${targets# }"
+
+      - name: Create a GitHub App token
+        id: app-token
+        if: vars.BACKPORT_APP_CLIENT_ID != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.BACKPORT_APP_CLIENT_ID }}
+          private-key: ${{ secrets.BACKPORT_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Open the backport pull requests
+        uses: korthout/backport-action@8560fb503c275d433c56f05a2f64850093baa9f7 # v4.7.0
+        with:
+          github_token: ${{ steps.app-token.outputs.token || github.token }}
+          target_branches: ${{ steps.targets.outputs.branches }}
+          # The branches come from the step above, for every trigger, so a label added
+          # after the merge doesn't backport the earlier labels again.
+          label_pattern: ""
