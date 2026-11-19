@@ -9,6 +9,8 @@ on:
     branches: [ master, 'release-*' ]
   schedule:
     - cron: '45 17 * * 2'
+  # a manual scan of any branch: Actions → Trivy Scan → Run workflow
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -16,7 +18,7 @@ permissions:
 jobs:
  images:
   name: Image Scan
-  runs-on: ubuntu-latest
+  runs-on: ubuntu-24.04
   permissions:
     contents: read
     security-events: write
