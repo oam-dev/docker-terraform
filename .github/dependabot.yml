@@ -1,0 +1,91 @@
+# Dependabot reads this file from the default branch only; target-branch covers the release branches.
+# The actions are pinned by commit SHA and the Dockerfile's base image by digest, so without these
+# updates the pins would only age. OpenTofu and the bundled providers are build arguments in the
+# Dockerfile, which Dependabot doesn't update: bump them by hand.
+version: 2
+updates:
+  # GitHub Actions: one grouped pull request a week per branch.
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: master
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: release-1.3
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: release-1.2
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: release-1.1
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # The base image (alpine:3.24 by digest): new digests and patch versions only. A new Alpine minor
+  # (alpine:3.25) is a deliberate change on each branch. Each update changes the image of the
+  # branch's next tag, so scan the candidate before tagging (RELEASE.md).
+  - package-ecosystem: docker
+    directory: /
+    target-branch: master
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+  - package-ecosystem: docker
+    directory: /
+    target-branch: release-1.3
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+  - package-ecosystem: docker
+    directory: /
+    target-branch: release-1.2
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+  - package-ecosystem: docker
+    directory: /
+    target-branch: release-1.1
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: chore
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
